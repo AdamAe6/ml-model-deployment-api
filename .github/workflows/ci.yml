@@ -31,3 +31,26 @@ jobs:
             - name: Run tests
               run: |
                   pytest
+
+    deploy:
+        needs: test
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Deploy to Hugging Face Spaces
+              env:
+                  HF_TOKEN: ${{ secrets.HF_TOKEN }}
+              run: |
+                  git config --global user.email "ci@github.com"
+                  git config --global user.name "GitHub Actions"
+
+                  git clone https://huggingface.co/spaces/AdamAe/ml-model-deployment-api hf-space
+                  rsync -av --exclude='.git' ./ hf-space/
+                  cd hf-space
+                  git add .
+                  git commit -m "Deploy from GitHub Actions"
+                  git push https://$HF_TOKEN@huggingface.co/spaces/AdamAe/ml-model-deployment-api
