@@ -53,4 +53,4 @@ jobs:
                   cd hf-space
                   git add .
                   git commit -m "Deploy from GitHub Actions"
-                  git push https://$HF_TOKEN@huggingface.co/spaces/AdamAe/ml-model-deployment-api
+                  git push https://user:$HF_TOKEN@huggingface.co/spaces/AdamAe/ml-model-deployment-api
