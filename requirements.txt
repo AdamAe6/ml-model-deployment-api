@@ -3,3 +3,8 @@ uvicorn
 scikit-learn
 joblib
 pytest
+sqlalchemy
+psycopg2-binary
+pydantic
+pandas
+lightgbm
