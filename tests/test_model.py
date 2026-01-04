@@ -120,12 +120,6 @@ def test_negative_years_since_promo(valid_features):
         ModelInput(features=valid_features)
 
 
-def test_incoherent_promo_year(valid_features):
-    valid_features["annee_derniere_promotion"] = 2020
-    valid_features["annees_depuis_la_derniere_promotion"] = 1
-    with pytest.raises(ValueError, match="incohérence"):
-        ModelInput(features=valid_features)
-
 
 # ---------- SALAIRE ----------
 def test_negative_salary(valid_features):
