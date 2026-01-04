@@ -1,8 +1,9 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Dict, Any
 
 class PredictRequest(BaseModel):
-    features: List[float]
+    features: Dict[str, Any]
 
 class PredictResponse(BaseModel):
-    prediction: float
+    prediction: int
+    probability: float | None = None
