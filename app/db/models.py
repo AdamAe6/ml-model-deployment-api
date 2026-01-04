@@ -68,22 +68,12 @@ class ModelInput(Base):
 
         # --- PROMOTION ---
         annees_depuis_promo = value.get("annees_depuis_la_derniere_promotion")
-        annee_derniere_promo = value.get("annee_derniere_promotion")
-        current_year = datetime.now(timezone.utc).year
 
         if annees_depuis_promo is not None:
             if annees_depuis_promo < 0:
                 raise ValueError("annees_depuis_la_derniere_promotion ne peut pas être négatif")
             if anciennete is not None and annees_depuis_promo > anciennete:
                 raise ValueError("annees_depuis_la_derniere_promotion ne peut pas être supérieure à l'ancienneté")
-
-        if annee_derniere_promo is not None:
-            if not (1900 <= annee_derniere_promo <= current_year):
-                raise ValueError("annee_derniere_promotion invalide")
-            if annees_depuis_promo is not None:
-                # cohérence simple: nombre d'années depuis promotion devrait correspondre
-                if current_year - annee_derniere_promo != int(annees_depuis_promo):
-                    raise ValueError("incohérence entre annee_derniere_promotion et annees_depuis_la_derniere_promotion")
 
         # --- RESPONSABILITE ---
         sous_resp = value.get("annes_sous_responsable_actuel")
