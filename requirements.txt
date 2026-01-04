@@ -2,9 +2,13 @@ fastapi
 uvicorn
 scikit-learn
 joblib
-pytest
+pandas
+lightgbm
+
 sqlalchemy
 psycopg2-binary
 pydantic
-pandas
-lightgbm
+
+pytest
+pytest-cov
+httpx
