@@ -1,112 +1,24 @@
-from fastapi import FastAPI, HTTPException
-from app.schemas.predict import PredictRequest, PredictResponse
-from app.ml.model import load_model
-from app.db.session import SessionLocal
-from app.db.models import ModelInput, ModelOutput
-import pandas as pd
-from fastapi import Depends
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+import pandas as pd
 import os
+
+from app.schemas.predict import PredictRequest
+from app.ml.model import load_model
+from app.db.session import get_db
+from app.db.models import ModelInput, ModelOutput
+
+
+# ============================================================
+# ENV
+# ============================================================
 
 IS_TESTING = os.getenv("ENV") == "test"
 
 
-app = FastAPI(
-    title="ML Model Deployment API",
-    description="API exposing a machine learning model",
-    version="1.0.0"
-)
-
-model = load_model()
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-
-
-@app.post("/predict")
-def predict(request: PredictRequest, db: Session = Depends(get_db)):
-    try:
-        data = {}
-        for feature in EXPECTED_FEATURES:
-            if feature not in request.features:
-                raise ValueError(f"Feature manquante : {feature}")
-            data[feature] = request.features[feature]
-
-        X = pd.DataFrame([data])
-        try:
-
-            if hasattr(model, 'feature_names_in_'):
-                cols = list(model.feature_names_in_)
-                X = X.reindex(columns=cols)
-            else:
-
-                try:
-                    cols = model.booster_.feature_name()
-                    X = X.reindex(columns=cols)
-                except Exception:
-
-                    X = X.reindex(columns=EXPECTED_FEATURES)
-
-            missing = [c for c in X.columns if X[c].isnull().all()]
-            if missing:
-                raise ValueError(f"Features manquantes après alignement : {missing}")
-
-        except ValueError:
-
-            raise
-        except Exception:
-            
-            X = pd.DataFrame([data], columns=EXPECTED_FEATURES)
-        
-        proba = model.predict_proba(X)
-        prediction = int(proba[0].argmax())
-        probability = float(proba[0][prediction])
-        # Création input (déclenche validations ORM)
-        if not IS_TESTING:
-           model_input = ModelInput(features=data)
-           db.add(model_input)
-           db.commit()
-           db.refresh(model_input)
-
-
-        if not IS_TESTING:
-           model_output = ModelOutput(
-           input_id=model_input.id,
-           prediction=int(prediction),
-           probability=probability
-        )
-        db.add(model_output)
-        db.commit()
-
-
-        return {
-            "prediction": prediction,
-            "probability": probability
-        }
-
-    except ValueError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail=str(e)
-        )
-
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error",
-        )
-
-    finally:
-        db.close()
-
-
+# ============================================================
+# CONSTANTES
+# ============================================================
 
 EXPECTED_FEATURES = [
     "age",
@@ -151,5 +63,95 @@ EXPECTED_FEATURES = [
     "nombre_experiences_precedentes",
     "nb_formations_suivies",
     "formations_par_annee",
-    "nombre_participation_pee"
+    "nombre_participation_pee",
 ]
+
+
+# ============================================================
+# APP
+# ============================================================
+
+app = FastAPI(
+    title="ML Model Deployment API",
+    description="API exposing a machine learning model",
+    version="1.0.0",
+)
+
+model = load_model()
+
+
+# ============================================================
+# ROUTES
+# ============================================================
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.post("/predict")
+def predict(
+    request: PredictRequest,
+    db: Session = Depends(get_db),
+):
+    try:
+        # ----------------------------------------------------
+        # 1. Vérification des features attendues
+        # ----------------------------------------------------
+        data = {}
+        for feature in EXPECTED_FEATURES:
+            if feature not in request.features:
+                raise ValueError(f"Feature manquante : {feature}")
+            data[feature] = request.features[feature]
+
+        # ----------------------------------------------------
+        # 2. Création DataFrame alignée avec le modèle
+        # ----------------------------------------------------
+        X = pd.DataFrame([data], columns=model.feature_names_in_)
+
+        # ----------------------------------------------------
+        # 3. Prédiction
+        # ----------------------------------------------------
+        proba = model.predict_proba(X)[0]
+        probability = float(proba[1])
+        prediction = int(probability >= 0.5)
+
+        # ----------------------------------------------------
+        # 4. Persistance DB (désactivée en tests / CI)
+        # ----------------------------------------------------
+        if not IS_TESTING:
+            model_input = ModelInput(features=data)
+            db.add(model_input)
+            db.commit()
+            db.refresh(model_input)
+
+            model_output = ModelOutput(
+                input_id=model_input.id,
+                prediction=prediction,
+                probability=probability,
+            )
+            db.add(model_output)
+            db.commit()
+
+        # ----------------------------------------------------
+        # 5. Réponse API
+        # ----------------------------------------------------
+        return {
+            "prediction": prediction,
+            "probability": probability,
+        }
+
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+    except Exception as e:
+        db.rollback()
+        print("❌ Internal error:", repr(e))
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error",
+        )
