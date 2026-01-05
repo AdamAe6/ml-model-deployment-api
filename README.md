@@ -1,3 +1,16 @@
+# ---
+
+title: "ML Model Deployment API"
+emoji: "🧠"
+colorFrom: "indigo"
+colorTo: "cyan"
+sdk: "gradio"
+sdk_version: "3.38"
+app_file: app.py
+pinned: false
+
+---
+
 # ML Model Deployment API
 
 ## Résumé
@@ -173,16 +186,3 @@ Les tests unitaires se trouvent dans `tests/`. Pour lancer la suite :
 ```bash
 pytest -q
 ```
-
----
-
-title: ML Model Deployment API
-emoji: 🤖
-colorFrom: blue
-colorTo: purple
-sdk: python
-sdk_version: "3.10"
-app_file: app.py
-pinned: false
-
----
