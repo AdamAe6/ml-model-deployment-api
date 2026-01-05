@@ -1,5 +1,14 @@
 fastapi
 uvicorn
-scikit-learn
+scikit-learn==1.7.1
 joblib
+pandas
+lightgbm
+
+sqlalchemy
+psycopg2-binary
+pydantic
+
 pytest
+pytest-cov
+httpx
