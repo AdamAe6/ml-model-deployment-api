@@ -26,7 +26,6 @@ def health():
 
 @app.post("/predict")
 def predict(request: PredictRequest, db: Session = Depends(get_db)):
-    db = SessionLocal()
     try:
         data = {}
         for feature in EXPECTED_FEATURES:
