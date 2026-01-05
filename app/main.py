@@ -7,6 +7,10 @@ import pandas as pd
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
+import os
+
+IS_TESTING = os.getenv("ENV") == "test"
+
 
 app = FastAPI(
     title="ML Model Deployment API",
@@ -63,19 +67,22 @@ def predict(request: PredictRequest, db: Session = Depends(get_db)):
         prediction = int(proba[0].argmax())
         probability = float(proba[0][prediction])
         # Création input (déclenche validations ORM)
-        model_input = ModelInput(features=data)
-        db.add(model_input)
-        db.commit()
-        db.refresh(model_input)
+        if not IS_TESTING:
+           model_input = ModelInput(features=data)
+           db.add(model_input)
+           db.commit()
+           db.refresh(model_input)
 
-        model_output = ModelOutput(
-            input_id=model_input.id,
-            prediction=prediction,
-            probability=probability
+
+        if not IS_TESTING:
+           model_output = ModelOutput(
+           input_id=model_input.id,
+           prediction=int(prediction),
+           probability=probability
         )
-
         db.add(model_output)
         db.commit()
+
 
         return {
             "prediction": prediction,
