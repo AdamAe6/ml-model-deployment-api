@@ -6,7 +6,7 @@ from sqlalchemy import (
     ForeignKey,
     CheckConstraint
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import declarative_base, relationship, validates
 from datetime import datetime, timezone
 
@@ -18,7 +18,7 @@ class ModelInput(Base):
     id = Column(Integer, primary_key=True)
 
     # Données envoyées au modèle
-    features = Column(JSONB, nullable=False)
+    features = Column(JSON, nullable=False)
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 

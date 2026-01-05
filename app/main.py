@@ -4,6 +4,9 @@ from app.ml.model import load_model
 from app.db.session import SessionLocal
 from app.db.models import ModelInput, ModelOutput
 import pandas as pd
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.db.session import get_db
 
 app = FastAPI(
     title="ML Model Deployment API",
@@ -22,7 +25,7 @@ def health():
 
 
 @app.post("/predict")
-def predict(request: PredictRequest):
+def predict(request: PredictRequest, db: Session = Depends(get_db)):
     db = SessionLocal()
     try:
         data = {}
