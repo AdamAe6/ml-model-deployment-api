@@ -92,7 +92,6 @@ def predict(request: PredictRequest):
         raise HTTPException(
             status_code=500,
             detail="Internal server error",
-            info=str(e)
         )
 
     finally:
