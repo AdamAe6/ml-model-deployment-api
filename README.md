@@ -2,7 +2,7 @@
 title: ML Model Deployment API
 emoji: 🧠
 colorFrom: indigo
-colorTo: cyan
+colorTo: blue
 sdk: docker
 python_version: "3.10"
 app_port: 7860
