@@ -86,6 +86,14 @@ model = load_model()
 
 @app.get("/health")
 def health():
+    """
+    Endpoint de vérification de santé de l'API.
+
+    Returns
+    -------
+    dict
+        Objet JSON simple indiquant le statut de l'API.
+    """
     return {"status": "ok"}
 
 
@@ -94,6 +102,26 @@ def predict(
     request: PredictRequest,
     db: Session = Depends(get_db),
 ):
+    """
+    Endpoint de prédiction qui renvoie la prédiction et la probabilité.
+
+    Parameters
+    ----------
+    request : PredictRequest
+        Objet Pydantic contenant les features à prédire.
+    db : Session, optional
+        Session SQLAlchemy (injected par dépendance), par défaut Depends(get_db).
+
+    Returns
+    -------
+    dict
+        Dictionnaire contenant 'prediction' (0 ou 1) et 'probability' (float).
+
+    Raises
+    ------
+    HTTPException
+        400 en cas de features manquantes ou invalides, 500 en cas d'erreur interne.
+    """
     try:
         # ----------------------------------------------------
         # 1. Vérification des features attendues

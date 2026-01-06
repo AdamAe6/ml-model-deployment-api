@@ -32,6 +32,26 @@ class ModelInput(Base):
     # -------- RÈGLES ORM PYTHON (VALIDATIONS) --------
     @validates("features")
     def validate_features(self, key, value):
+        """
+        Valide les features fournies avant insertion en base.
+
+        Parameters
+        ----------
+        key : str
+            Nom du champ validé (ici 'features').
+        value : dict
+            Dictionnaire des features à valider.
+
+        Returns
+        -------
+        dict
+            Le même dictionnaire `value` s'il est valide.
+
+        Raises
+        ------
+        ValueError
+            Si une règle de validation est violée.
+        """
 
         # --- AGE ---
         age = value.get("age")
