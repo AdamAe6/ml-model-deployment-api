@@ -1,14 +1,12 @@
-# ---
-
-title: "ML Model Deployment API"
-emoji: "🧠"
-colorFrom: "indigo"
-colorTo: "cyan"
-sdk: "gradio"
-sdk_version: "3.38"
-app_file: app.py
+---
+title: ML Model Deployment API
+emoji: 🧠
+colorFrom: indigo
+colorTo: cyan
+sdk: docker
+python_version: "3.10"
+app_port: 7860
 pinned: false
-
 ---
 
 # ML Model Deployment API
