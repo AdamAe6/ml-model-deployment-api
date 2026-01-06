@@ -50,14 +50,15 @@ jobs:
           git config --global user.email "ci@github.com"
           git config --global user.name "GitHub Actions"
 
-          # Clone Hugging Face Space
           git clone https://huggingface.co/spaces/AdamAe/ml-model-deployment-api hf-space
 
-          # Clean HF repo (important)
           rm -rf hf-space/*
 
-          # Copy project content into HF repo root
-          rsync -av --exclude='.git' ./ hf-space/
+          rsync -av \
+            --exclude='.git' \
+            --exclude='hf-space' \
+            ./ hf-space/
+
 
           cd hf-space
           git add .
