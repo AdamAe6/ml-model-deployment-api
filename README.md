@@ -188,3 +188,101 @@ pytest -q
 ## URL GitHub
 
 [https://github.com/AdamAe6/ml-model-deployment-api](https://github.com/AdamAe6/ml-model-deployment-api)
+
+## Roadmap & améliorations proposées
+
+Ci-dessous des actions et recommandations à ajouter à la documentation / plan de développement. Elles couvrent l'authentification pour le déploiement sur Hugging Face Spaces via clé (intégrée dans GitHub Actions), les besoins analytiques, des améliorations du modèle et des endpoints additionnels, ainsi que des propositions de tables supplémentaires pour la gestion des logs.
+
+### 1) Authentification Hugging Face Space (mode clé) — GitHub Actions
+
+- Créez une clé d'accès (Access Token) depuis votre compte Hugging Face (Settings -> Access Tokens) avec les droits nécessaires pour déployer ou mettre à jour votre Space.
+- Stockez cette clé comme secret GitHub dans le dépôt : par exemple `HF_API_TOKEN` (Repository Settings -> Secrets and variables -> Actions -> New repository secret).
+- Dans votre workflow GitHub Actions (ex. `.github/workflows/deploy.yml`), injectez le secret via `secrets.HF_API_TOKEN` et utilisez-le pour l'authentification lors de la phase de déploiement. Exemple d'approche générique :
+
+```yaml
+# snippet d'exemple — adaptez selon votre action de déploiement
+- name: Deploy to Hugging Face Space
+	env:
+		HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+	run: |
+		pip install huggingface_hub
+		# exemple : script python qui pousse les artefacts sur le Space en utilisant HF_API_TOKEN
+		python scripts/deploy_to_hf_space.py --token "$HF_API_TOKEN"
+```
+
+- Bonnes pratiques :
+  - Ne jamais hardcoder la clé dans le repo. Utilisez les secrets GitHub.
+  - Vérifiez que les logs CI ne révèlent pas la variable (GitHub masque automatiquement les secrets mais soyez prudent avec les commandes `echo`).
+  - Limitez la portée et la durée du token si possible.
+
+### 2) Besoins analytiques (telemetry / observability)
+
+Proposer et instrumenter la collecte des métriques et logs suivants :
+
+- Événements à collecter :
+
+  - Requêtes entrantes : route, timestamp, taille du payload, utilisateur (si authentifié), request_id
+  - Latence par endpoint (ms)
+  - Statistiques modèle : prediction, probability, modèle utilisé/version
+  - Erreurs/exceptions (stacktrace minimal, code HTTP)
+
+- Données stockées pour chaque événement (suggestion):
+
+  - timestamp, request_id, route, model_version, input_hash, prediction, probability, latency_ms, status_code, user_id (anonymisé)
+
+- Architecture recommandée :
+  - Logs structurés -> stocker dans Postgres (logs JSONB) ou envoyer vers un service de logs
+
+### 3) Amélioration du modèle et autres endpoints ("Sharp")
+
+Suggestions d'endpoints à ajouter :
+
+- `GET /version` : renvoie la version du modèle, date d'entraînement et métadonnées.
+- `POST /explain` : endpoint d'explicabilité (SHAP) qui renvoie les contributions des features.
+
+### 4) Tables supplémentaires pour gestion des logs / audit
+
+Proposition de schéma minimal (PostgreSQL) pour capturer logs et audits :
+
+1. `request_logs`
+
+```sql
+CREATE TABLE request_logs (
+	id SERIAL PRIMARY KEY,
+	request_id UUID NOT NULL,
+	route TEXT NOT NULL,
+	input_hash TEXT NULL,
+	model_version TEXT NULL,
+	status_code INTEGER NOT NULL,
+	latency_ms INTEGER NULL,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+	meta JSONB NULL
+);
+```
+
+2. `error_logs`
+
+```sql
+CREATE TABLE error_logs (
+	id SERIAL PRIMARY KEY,
+	request_id UUID NULL,
+	error_message TEXT NOT NULL,
+	error_type TEXT NULL,
+	stack TEXT NULL,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+	meta JSONB NULL
+);
+```
+
+3. `audit_logs`
+
+```sql
+CREATE TABLE audit_logs (
+	id SERIAL PRIMARY KEY,
+	actor TEXT NOT NULL,
+	action TEXT NOT NULL,
+	target TEXT NULL,
+	details JSONB NULL,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+```
